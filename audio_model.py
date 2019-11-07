@@ -10,8 +10,6 @@ from keras.optimizers import *
 
 import keras.backend as K
 
-# these are made to work with the regular CQT values
-
 temporal_kernel_sizes = [
         (130, 1), # ~ .75s of 1 octave
         (87, 1),  # ~ .50s of 1 octave
@@ -26,11 +24,16 @@ spectral_kernel_sizes = [
         ]
 
 class Gan(object):
-    def __init__(self, shape, latent_dim):
+    def __init__(self, shape, latent_mode='linear', latent_dim=100, gen_weights=None, disc_weights=None):
         self.shape = shape
         self.latent_dim = latent_dim
-        self.gen = self.generator()
-        self.disc = self.discriminator()
+
+        if latent_mode == 'projection':
+            self.gen = keras.load_model(gen_weights) if gen_weights is not None else self.projection_generator()
+        else:
+            self.gen = keras.load_model(gen_weights) if gen_weights is not None else self.generator()
+
+        self.disc = keras.load_model(disc_weights) if disc_weights is not None else self.discriminator()
 
         optimizer = Adam(.0002, .5)
         self.disc.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
@@ -57,6 +60,11 @@ class Gan(object):
     def pred(self):
         return self.gen.predict(np.random.normal(0, 1, (1, 100)))
 
+    def projection_generator(self):
+        inp = Input(shape=self.shape)
+
+        return Model(inp, model)
+
     def generator(self):
         def dense_encoded_space(x, num, prelu=True):
             y = Dense(num)(x)
@@ -68,7 +76,6 @@ class Gan(object):
 
         inp = Input(shape=(self.latent_dim,))
 
-        # explode this ish
         model = dense_encoded_space(inp, 128)
         model = dense_encoded_space(model, 256)
         model = dense_encoded_space(model, 512)

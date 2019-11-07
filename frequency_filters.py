@@ -6,8 +6,11 @@ import math
 import numpy as np
 import re
 
+from functools import lru_cache
+
 notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
+@lru_cache(maxsize=len(notes))
 def frequency_map(root_note='C', start_hz=16.351, start_octave=0, end_octave=8):
     """ Frequency map [note -> frequency] """
 
@@ -28,6 +31,7 @@ def frequency_map(root_note='C', start_hz=16.351, start_octave=0, end_octave=8):
 def gaussian_filter(x, mu=0, sig=1):
     return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
 
+@lru_cache(maxsize=16)
 def generate_cqt_frequency_filter(note, num_buckets=252, buckets_per_note=3, start_note='C1', end_note='C8'):
     """
     Gate filter to gate cqt spectrogram through
